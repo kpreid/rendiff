@@ -1,0 +1,17 @@
+[package]
+name = "rendiff-cli"
+version = "0.1.0"
+edition = "2021"
+categories = ["command-line-utilities", "development-tools::testing"]
+publish = false # for now, just a test/example tool
+
+[[bin]]
+name = "rendiff"
+path = "src/main.rs"
+doc = false
+
+[dependencies]
+anyhow = "1.0.70"
+clap = { version = "4.2.4", default-features = false, features = ["cargo", "deprecated", "derive", "help", "std", "suggestions", "usage", "wrap_help"] }
+image = { workspace = true, default-features = true }
+rendiff = { version = "0.1.0", path = "../rendiff/" }
