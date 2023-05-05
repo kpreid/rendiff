@@ -21,7 +21,7 @@ jobs:
   test:
     strategy:
       matrix:
-        toolchain: [stable, beta, nightly]
+        toolchain: [stable, beta, nightly, "1.69.0"]
 
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.toolchain != 'stable' }}
