@@ -92,3 +92,27 @@ jobs:
 #       with:
 #         crate-name: exhaust
 #         version-tag-prefix: v
+
+  mutants:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        # Not sure if this is strictly necessary -- but it is if GitHub Actions images aren't
+        # always as up to date than we want.
+        run: rustup toolchain install stable --profile=minimal
+
+      - name: Install cargo-mutants
+        run: cargo install --version 1.2.1 cargo-mutants
+
+      - name: Run mutation testing
+        run: cargo mutants
+
+      - name: Save results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: mutation-report
+          path: "*/mutants.out"
