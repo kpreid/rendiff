@@ -1,0 +1,94 @@
+name: Build & Test
+
+permissions: {}
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - ci
+
+env:
+  CARGO_TERM_COLOR: always
+  # Disable incremental compilation because we aren't caching incremental compilation
+  # artifacts, so they won't be useful for anything (other than maybe the exhaustive
+  # builds with different features).
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        toolchain: [stable, beta, nightly]
+
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.toolchain != 'stable' }}
+
+    steps:
+    - uses: actions/checkout@v3.1.0
+
+    - name: Install Rust toolchain
+      # Install exactly what we need: compiler, Cargo, clippy
+      run: |
+          rustup toolchain install "${{ matrix.toolchain }}" --profile=minimal --component=clippy
+          rustup override set "${{ matrix.toolchain }}"
+
+    # Load cache before doing any Rust builds
+    - uses: Swatinem/rust-cache@v2.0.2
+
+    - name: Lint
+      run: |
+        cargo clippy --timings
+        cargo rustdoc -- -Drustdoc::broken_intra_doc_links
+
+    - name: Compile (no features)
+      # compile is broken out so we have visibility into compile vs. run times
+      run: cargo test --no-default-features --timings --no-run
+
+    - name: Run tests (no features)
+      run: cargo test --no-default-features
+
+    - name: Compile (all features)
+      run: cargo test --all-features --timings --no-run
+
+    - name: Run tests (all features)
+      run: cargo test --all-features
+
+    - name: Update
+      run: cargo update
+
+    - name: Compile with updates
+      run: cargo test --timings --no-run
+
+    - name: Test with updates
+      run: cargo test --timings
+
+    # Save timing reports so we can download and view them
+    # (for understanding build performance in CI)
+    - name: Save cargo --timings output
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: cargo-timings ${{ matrix.os }} ${{ matrix.toolchain }} ${{ matrix.depversions }}
+        path: |
+          target/cargo-timings/cargo-timing-*.html
+
+# TODO: enable semver-checks once we have at least one published version to compare against
+#   semver:
+#     runs-on: ubuntu-latest
+# 
+#     steps:
+#     - uses: actions/checkout@v3.1.0
+# 
+#     - uses: Swatinem/rust-cache@v2.0.2
+# 
+#     - name: Check semver
+#       uses: obi1kenobi/cargo-semver-checks-action@v1
+#       # Use workspace target dir for cargo install's build, so that the build will be cached.
+#       env:
+#         CARGO_TARGET_DIR: target/
+#       with:
+#         crate-name: exhaust
+#         version-tag-prefix: v
