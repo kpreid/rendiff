@@ -46,3 +46,6 @@ pub use diff::*;
 
 mod histogram;
 pub use histogram::*;
+
+mod threshold;
+pub use threshold::*;
