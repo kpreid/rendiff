@@ -8,6 +8,7 @@ use itertools::Itertools;
 /// For example, the zero element of the array contains a count of the pixels
 /// that were considered equal.
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[allow(clippy::exhaustive_structs)]
 pub struct Histogram(pub [usize; 256]);
 
 impl Histogram {
@@ -36,14 +37,18 @@ impl fmt::Debug for Histogram {
 /// &lt;key&gt; or less”. Lower magnitudes that are accepted by a lower entry don't count
 /// towards the limit at a higher magnitude. Differences of zero are always accepted.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::exhaustive_structs)]
 pub struct Threshold(pub BTreeMap<u8, usize>);
 
 impl Threshold {
     /// Creates a [`Threshold`] from a list of (magnitude, count) entries.
     ///
+    /// # Panics
+    ///
     /// All magnitudes must be greater than zero (zero would have no effect if it were
-    /// permitted) and less than 255 (which would make the condition never false).
-    /// If these conditions are not met, `new()` panics.
+    /// permitted) and less than 255 (which would make the condition never false),
+    /// or the function panics.
+    #[must_use]
     pub fn new(data: impl IntoIterator<Item = (u8, usize)>) -> Self {
         Self(
             data.into_iter()
@@ -60,6 +65,7 @@ impl Threshold {
     }
 
     /// Allow any number of pixel differences not exceeding `level`.
+    #[must_use]
     pub fn no_bigger_than(level: u8) -> Self {
         if level == 0 {
             Self::new([])
@@ -71,6 +77,7 @@ impl Threshold {
     /// Returns whether the differences described by the given [`Histogram`] are smaller
     /// than this [`Threshold`] permits.
     // TODO: rename
+    #[must_use]
     pub fn allows(&self, histogram: Histogram) -> bool {
         // Skip the first entry and always accept any number of zero-value differences.
         let mut checked_up_to = 1;
@@ -79,7 +86,7 @@ impl Threshold {
             // Add 1 because the level value *includes* differences of that level, i.e.
             // level 1 should include checking histogram[1].
             let new_checked_up_to = usize::from(level) + 1;
-            assert!(new_checked_up_to > checked_up_to);
+            debug_assert!(new_checked_up_to > checked_up_to);
             let new_differences = histogram.0[checked_up_to..new_checked_up_to]
                 .iter()
                 .sum::<usize>();

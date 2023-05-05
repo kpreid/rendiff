@@ -4,6 +4,7 @@ use crate::Histogram;
 
 /// Output of [`diff()`], a comparison between two images.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub struct DiffResult {
     /// A histogram of magnitudes of the detected differences.
     pub histogram: Histogram,
@@ -23,6 +24,7 @@ pub struct DiffResult {
 /// result can be checked against one.
 ///
 /// Panics if the images do not have equal sizes.
+#[must_use]
 pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> DiffResult {
     if expected.dimensions() != actual.dimensions() {
         return DiffResult {
@@ -42,7 +44,7 @@ pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> DiffResult {
     // Combine the two half_diff results: _both_ must be small for the output to be small.
     let combined_diff: GrayImage = GrayImage::from_fn(hd1.width(), hd1.height(), |x, y| {
         hd1.get_pixel(x, y)
-            .map2(hd2.get_pixel(x, y), |ch1, ch2| ch1.max(ch2))
+            .map2(hd2.get_pixel(x, y), std::cmp::Ord::max)
     });
 
     // Compute a histogram of difference sizes.
@@ -84,7 +86,7 @@ fn half_diff(have: &RgbaImage, want: &RgbaImage) -> GrayImage {
                 // means we're under-counting the brightness difference, but `image`
                 // is also doing it with linear arithmetic anyway:
                 // <https://docs.rs/image/0.24.2/src/image/color.rs.html#473>
-                let channel_diffs = hpixel.map2(&wpixel, |hch, wch| hch.abs_diff(wch));
+                let channel_diffs = hpixel.map2(&wpixel, u8::abs_diff);
                 let color_diff = channel_diffs.to_luma()[0];
                 let alpha_diff = channel_diffs[3];
                 color_diff.max(alpha_diff)
@@ -126,13 +128,14 @@ mod tests {
         diff(&expected.convert(), &actual.convert())
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn add_border<P: Pixel>(
         border_value: P,
         image: ImageBuffer<P, Vec<P::Subpixel>>,
     ) -> ImageBuffer<P, Vec<P::Subpixel>> {
         let (width, height) = image.dimensions();
         ImageBuffer::from_fn(width + 2, height + 2, |x, y| {
-            if (1..(width + 1)).contains(&x) && (1..(height + 1)).contains(&y) {
+            if (1..=width).contains(&x) && (1..=height).contains(&y) {
                 *image.get_pixel(x - 1, y - 1)
             } else {
                 border_value
