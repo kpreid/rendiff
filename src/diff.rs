@@ -5,14 +5,14 @@ use crate::Histogram;
 /// Output of [`diff()`], a comparison between two images.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
-pub struct DiffResult {
+pub struct Difference {
     /// A histogram of magnitudes of the detected differences.
     pub histogram: Histogram,
     /// An image intended for human viewing of which pixels are different,
     /// or [`None`] if the images had different sizes.
     ///
     /// The precise content of this image is not specified. It will be 1:1 scale with the
-    /// images being compared, but it may be larger or smaller.
+    /// images being compared, but it may be larger or smaller due to treatment of the edges.
     pub diff_image: Option<RgbaImage>,
 }
 
@@ -25,9 +25,9 @@ pub struct DiffResult {
 ///
 /// Panics if the images do not have equal sizes.
 #[must_use]
-pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> DiffResult {
+pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> Difference {
     if expected.dimensions() != actual.dimensions() {
-        return DiffResult {
+        return Difference {
             // dummy very-bad histogram
             histogram: {
                 let mut h = [0; 256];
@@ -55,7 +55,7 @@ pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> DiffResult {
     }
     //eprintln!("{:?}", histogram);
 
-    DiffResult {
+    Difference {
         histogram: Histogram(histogram),
         diff_image: Some(combined_diff.convert()),
     }
@@ -112,7 +112,7 @@ mod tests {
         expected_data: Vec<P::Subpixel>,
         actual_data: Vec<P::Subpixel>,
         border_value: P,
-    ) -> DiffResult
+    ) -> Difference
     where
         ImageBuffer<P, Vec<P::Subpixel>>: ConvertBuffer<RgbaImage>,
     {
@@ -190,7 +190,7 @@ mod tests {
 
         assert_eq!(
             diff_result,
-            DiffResult {
+            Difference {
                 histogram: Histogram(expected_histogram),
                 diff_image: Some(expected_diff_image)
             }
@@ -211,7 +211,7 @@ mod tests {
         let actual = ImageBuffer::from_raw(1, 2, vec![0, 0, 0, 255, 0, 0, 0, 255u8]).unwrap();
         assert_eq!(
             diff(&expected, &actual),
-            DiffResult {
+            Difference {
                 histogram: {
                     let mut h = [0; 256];
                     h[255] = usize::MAX;

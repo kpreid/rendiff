@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::Histogram;
 
-/// A bound upon pixel differences observed in a [`DiffResult`](crate::DiffResult).
+/// A bound upon pixel differences observed in a [`Difference`](crate::Difference).
 ///
 /// Each entry means “There may be up to &lt;value&gt; differences of magnitude
 /// &lt;key&gt; or less”. Lower magnitudes that are accepted by a lower entry don't count
