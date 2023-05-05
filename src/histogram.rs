@@ -2,10 +2,17 @@ use std::fmt;
 
 use itertools::Itertools;
 
-/// A histogram of luminance difference values.
+/// A [histogram] of color difference values.
 ///
-/// For example, the zero element of the array contains a count of the pixels
-/// that were considered equal.
+/// The histogram is represented as an array whose indices are the difference values,
+/// and whose values are the count of how many differences of that value were found.
+/// (For example, the first (index `0`) element of the array contains a count of the pixels
+/// that were considered equal.)
+///
+/// This type does not attribute any meaning, units, scale, or linearity to the difference values;
+/// only that there are 256 of them, they are ordered, and `0` is no difference.
+///
+/// [histogram]: https://en.wikipedia.org/wiki/Histogram
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 #[allow(clippy::exhaustive_structs)]
 pub struct Histogram(pub [usize; 256]);
