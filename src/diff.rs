@@ -16,14 +16,19 @@ pub struct Difference {
     pub diff_image: Option<RgbaImage>,
 }
 
-/// Compare two images and produces an image highlighting the differences,
-/// with a neighborhood-sensitive comparison which counts one pixel worth of
+/// Compares two images with a neighborhood-sensitive comparison which counts one pixel worth of
 /// displacement as not a difference.
 ///
-/// This does not have any threshold for ignoring color differences; rather, the
-/// result can be checked against one.
+/// See the [crate documentation](crate) for more details on the algorithm used.
 ///
-/// If the images have different sizes, then the result will always be the maximum difference.
+/// This function does not have any options for ignoring small color differences; rather, the
+/// result can be checked against a [`Threshold`](crate::Threshold).
+///
+/// Details:
+///
+/// * If the images have different sizes, then the result will always be the maximum difference.
+/// * Differences in the alpha channel are counted the same as differences in luma; the maximum
+///   of luma and alpha is used as the result.
 #[must_use]
 pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> Difference {
     if expected.dimensions() != actual.dimensions() {
