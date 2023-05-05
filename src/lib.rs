@@ -27,24 +27,18 @@
 //! color which is a blend of colors found in the neighborhood.
 
 // This list is sorted.
-#![deny(rust_2018_idioms)]
-#![deny(unsafe_op_in_unsafe_fn)]
-#![warn(clippy::cast_lossless)]
-#![warn(clippy::doc_markdown)]
+#![forbid(rust_2018_idioms)]
+#![forbid(unsafe_code)]
 #![warn(clippy::exhaustive_enums)]
 #![warn(clippy::exhaustive_structs)]
 #![warn(clippy::modulo_arithmetic)]
-#![warn(clippy::return_self_not_must_use)]
-#![warn(clippy::undocumented_unsafe_blocks)]
-#![warn(clippy::uninlined_format_args)]
+#![warn(clippy::pedantic)]
 #![warn(clippy::unnecessary_self_imports)]
-#![warn(clippy::wrong_self_convention)]
-#![warn(explicit_outlives_requirements)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 #![warn(noop_method_call)]
 #![warn(trivial_numeric_casts)]
-#![warn(unused_extern_crates)]
+#![warn(unreachable_pub)]
 #![warn(unused_lifetimes)]
 
 mod diff;
