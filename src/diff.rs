@@ -23,15 +23,16 @@ pub struct Difference {
 /// This does not have any threshold for ignoring color differences; rather, the
 /// result can be checked against one.
 ///
-/// Panics if the images do not have equal sizes.
+/// If the images have different sizes, then the result will always be the maximum difference.
 #[must_use]
 pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> Difference {
     if expected.dimensions() != actual.dimensions() {
         return Difference {
-            // dummy very-bad histogram
+            // Count it as every pixel different.
             histogram: {
                 let mut h = [0; 256];
-                h[255] = usize::MAX;
+                h[usize::from(u8::MAX)] = expected.len().max(actual.len())
+                    / usize::from(expected.sample_layout().channels);
                 Histogram(h)
             },
             diff_image: None,
@@ -214,7 +215,7 @@ mod tests {
             Difference {
                 histogram: {
                     let mut h = [0; 256];
-                    h[255] = usize::MAX;
+                    h[255] = 2;
                     Histogram(h)
                 },
                 diff_image: None
