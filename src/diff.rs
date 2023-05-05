@@ -30,7 +30,7 @@ pub struct Difference {
 /// * Differences in the alpha channel are counted the same as differences in luma; the maximum
 ///   of luma and alpha is used as the result.
 #[must_use]
-pub fn diff(expected: &RgbaImage, actual: &RgbaImage) -> Difference {
+pub fn diff(actual: &RgbaImage, expected: &RgbaImage) -> Difference {
     if expected.dimensions() != actual.dimensions() {
         return Difference {
             // Count it as every pixel different.
