@@ -6,7 +6,7 @@ The algorithm implemented in this Rust library is intended to allow comparing im
 of the same scene which were rendered using different algorithms, or different
 hardware, causing small “rounding errors” in either color or spatial position that should be ignored as insignificant.
 
-See the library documentation for details on the algorithm used.
+See [the library documentation](https://docs.rs/rendiff/latest/rendiff/) for details on the algorithm used.
 
 Packages in this repository
 ---------------------------
