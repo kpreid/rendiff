@@ -1,3 +1,4 @@
+use image::Rgba;
 use image::{buffer::ConvertBuffer, GenericImageView, GrayImage, Pixel, RgbaImage};
 
 use crate::Histogram;
@@ -86,23 +87,28 @@ fn half_diff(have: &RgbaImage, want: &RgbaImage) -> GrayImage {
         let neighborhood = want.view(x, y, 3, 3);
         let minimum_diff_in_neighborhood: u8 = neighborhood
             .pixels()
-            .map(|(_, _, wpixel)| -> u8 {
-                // Diff each channel independently, then convert the difference to luma.
-                // Note: this is not theoretically correct in that sRGB nonlinearity
-                // means we're under-counting the brightness difference, but `image`
-                // is also doing it with linear arithmetic anyway:
-                // <https://docs.rs/image/0.24.2/src/image/color.rs.html#473>
-                let channel_diffs = hpixel.map2(&wpixel, u8::abs_diff);
-                let color_diff = channel_diffs.to_luma()[0];
-                let alpha_diff = channel_diffs[3];
-                color_diff.max(alpha_diff)
-            })
+            .map(|(_, _, wpixel)| pixel_diff(hpixel, wpixel))
             .min()
             .expect("neighborhood is never empty");
         buffer.push(minimum_diff_in_neighborhood);
     }
 
     GrayImage::from_raw(have_elems.width(), have_elems.height(), buffer).unwrap()
+}
+
+/// Compare two pixel values and produce a difference magnitude.
+///
+/// TODO: This function should be replaceable by the caller of `diff()` instead.
+fn pixel_diff(a: Rgba<u8>, b: Rgba<u8>) -> u8 {
+    // Diff each channel independently, then convert the difference to luma.
+    // Note: this is not theoretically correct in that sRGB nonlinearity
+    // means we're under-counting the brightness difference, but `image`
+    // is also doing it with linear arithmetic anyway:
+    // <https://docs.rs/image/0.24.2/src/image/color.rs.html#473>
+    let channel_diffs = a.map2(&b, u8::abs_diff);
+    let color_diff = channel_diffs.to_luma()[0];
+    let alpha_diff = channel_diffs[3];
+    color_diff.max(alpha_diff)
 }
 
 #[cfg(test)]
