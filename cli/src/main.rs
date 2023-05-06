@@ -9,10 +9,17 @@ use rendiff::Threshold;
 
 #[derive(Debug, Parser)]
 struct Args {
+    /// One of the image files to compare.
     actual: PathBuf,
+    /// The other image file to compare.
     expected: PathBuf,
 
-    #[arg(long = "diff-image", short = 'o')]
+    /// Path to which to write an image visually depicting differences found.
+    ///
+    /// Output format is decided by the file extension; it can be any of the formats supported
+    /// by <https://crates.io/crates/image> provided that this instance of `rendiff` was compiled
+    /// with that support.
+    #[arg(long = "diff-output", short = 'o', value_name = "PATH")]
     diff: Option<PathBuf>,
 }
 
