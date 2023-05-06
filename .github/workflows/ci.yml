@@ -41,7 +41,7 @@ jobs:
     - name: Lint
       run: |
         cargo clippy --timings
-        cargo rustdoc -- -Drustdoc::broken_intra_doc_links
+        cargo rustdoc --package=rendiff -- -Drustdoc::broken_intra_doc_links
 
     - name: Compile (no features)
       # compile is broken out so we have visibility into compile vs. run times
