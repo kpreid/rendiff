@@ -5,7 +5,7 @@ use anyhow::Context;
 use clap::Parser;
 
 use image::RgbaImage;
-use rendiff::Threshold;
+use rendiff::{Difference, Threshold};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -35,22 +35,31 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let difference = rendiff::diff(&actual, &expected);
 
-    if let (Some(diff_image), Some(diff_path)) = (difference.diff_image, diff_path) {
+    if let (Some(diff_image), Some(diff_path)) = (&difference.diff_image, &diff_path) {
         diff_image
             .save(&diff_path)
             .with_context(|| format!("failed to write '{}'", diff_path.display()))?;
     }
 
+    print_results(&difference);
+
     // TODO: args for threshold
     let equal = Threshold::no_bigger_than(0).allows(difference.histogram);
-
-    // TODO: print the histogram
 
     Ok(if equal {
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE
     })
+}
+
+fn print_results(difference: &Difference) {
+    let Difference {
+        histogram,
+        diff_image: _,
+        ..
+    } = difference;
+    eprintln!("{:#?}", histogram);
 }
 
 fn open_with_context(description: &str, path: &Path) -> anyhow::Result<RgbaImage> {
