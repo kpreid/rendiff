@@ -2,6 +2,8 @@
 name = "rendiff-cli"
 version = "0.1.0"
 edition = "2021"
+rust-version = { workspace = true }
+repository = { workspace = true }
 categories = ["command-line-utilities", "development-tools::testing"]
 publish = false # for now, just a test/example tool
 

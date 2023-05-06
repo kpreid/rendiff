@@ -4,6 +4,10 @@ members = [
     "cli",
 ]
 
+[workspace.package]
+rust-version = "1.69.0"
+repository = "https://github.com/kpreid/rendiff/"
+
 [workspace.dependencies]
 image = { version = "0.24.6", default-features = false }
 mutants = "0.0.3"

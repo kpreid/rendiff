@@ -2,7 +2,8 @@
 name = "rendiff"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.69.0"
+rust-version = { workspace = true }
+repository = { workspace = true }
 description = "Image comparison (diffing) for computer graphics renderer test cases."
 license = "MIT OR Apache-2.0"
 categories = ["development-tools::testing", "game-development", "multimedia::images", "rendering"]
