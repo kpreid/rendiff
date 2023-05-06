@@ -88,8 +88,6 @@ dependencies = [
  "anstyle",
  "bitflags",
  "clap_lex",
- "once_cell",
- "strsim",
  "terminal_size",
 ]
 
@@ -438,6 +436,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "mutants"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc0287524726960e07b119cebd01678f852f147742ae0d925e6a520dca956126"
+
+[[package]]
 name = "nanorand"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -589,6 +593,7 @@ dependencies = [
  "anyhow",
  "clap",
  "image",
+ "mutants",
  "rendiff",
 ]
 
@@ -632,12 +637,6 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 dependencies = [
  "lock_api",
 ]
-
-[[package]]
-name = "strsim"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "syn"

@@ -12,6 +12,7 @@ doc = false
 
 [dependencies]
 anyhow = "1.0.70"
-clap = { version = "4.2.4", default-features = false, features = ["cargo", "deprecated", "derive", "help", "std", "suggestions", "usage", "wrap_help"] }
+clap = { version = "4.2.4", default-features = false, features = ["derive", "help", "std", "usage", "wrap_help"] }
 image = { workspace = true, default-features = true }
+mutants = { workspace = true }
 rendiff = { version = "0.1.0", path = "../rendiff/" }

@@ -6,3 +6,4 @@ members = [
 
 [workspace.dependencies]
 image = { version = "0.24.6", default-features = false }
+mutants = "0.0.3"

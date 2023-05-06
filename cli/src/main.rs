@@ -53,6 +53,7 @@ fn main() -> anyhow::Result<ExitCode> {
     })
 }
 
+#[mutants::skip] // TODO: cli tests
 fn print_results(difference: &Difference) {
     let Difference {
         histogram,
@@ -62,6 +63,7 @@ fn print_results(difference: &Difference) {
     eprintln!("{:#?}", histogram);
 }
 
+#[mutants::skip] // TODO: cli tests
 fn open_with_context(description: &str, path: &Path) -> anyhow::Result<RgbaImage> {
     let image = image::open(path)
         .with_context(|| format!("failed to open {} '{}'", description, path.display()))?;
