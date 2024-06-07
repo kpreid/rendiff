@@ -117,7 +117,7 @@ mod tests {
     use crate::Threshold;
     use image::{buffer::ConvertBuffer, ImageBuffer, Pixel, Rgba};
 
-    /// Run diff() against two images defined as vectors,
+    /// Run [`diff()`] against two images defined as vectors,
     /// with an added border.
     fn diff_vecs<P: Pixel>(
         (width, height): (u32, u32),
