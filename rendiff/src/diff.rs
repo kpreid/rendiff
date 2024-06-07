@@ -1,6 +1,6 @@
-use image::{GenericImageView, GrayImage, Pixel, Rgba, RgbaImage};
+use imgref::{ImgRef, ImgVec};
 
-use crate::Histogram;
+use crate::{Histogram, RgbaPixel};
 
 /// Output of [`diff()`], a comparison between two images.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10,7 +10,7 @@ pub struct Difference {
     /// A histogram of magnitudes of the detected differences.
     pub histogram: Histogram,
 
-    /// An image intended for human viewing of which pixels are different,
+    /// An sRGB RGBA image intended for human viewing of which pixels are different,
     /// or [`None`] if the images had different sizes.
     ///
     /// The precise content of this image is not specified. It will be 1:1 scale with the
@@ -18,11 +18,11 @@ pub struct Difference {
     ///
     /// Currently, the red channel contains data from the input `expected` image,
     /// and the blue and green channels contain differences, scaled up for high visibility.
-    pub diff_image: Option<RgbaImage>,
+    pub diff_image: Option<imgref::ImgVec<RgbaPixel>>,
 }
 
-/// Compares two images with a neighborhood-sensitive comparison which counts one pixel worth of
-/// displacement as not a difference.
+/// Compares two RGBA images with a neighborhood-sensitive comparison which counts one pixel worth
+/// of displacement as not a difference.
 ///
 /// See the [crate documentation](crate) for more details on the algorithm used.
 ///
@@ -35,14 +35,13 @@ pub struct Difference {
 /// * Differences in the alpha channel are counted the same as differences in luma; the maximum
 ///   of luma and alpha is used as the result.
 #[must_use]
-pub fn diff(actual: &RgbaImage, expected: &RgbaImage) -> Difference {
-    if expected.dimensions() != actual.dimensions() {
+pub fn diff(actual: ImgRef<'_, RgbaPixel>, expected: ImgRef<'_, RgbaPixel>) -> Difference {
+    if dimensions(expected) != dimensions(actual) {
         return Difference {
             // Count it as every pixel different.
             histogram: {
                 let mut h = [0; 256];
-                h[usize::from(u8::MAX)] = expected.len().max(actual.len())
-                    / usize::from(expected.sample_layout().channels);
+                h[usize::from(u8::MAX)] = expected.pixels().len().max(actual.pixels().len());
                 Histogram(h)
             },
             diff_image: None,
@@ -53,16 +52,24 @@ pub fn diff(actual: &RgbaImage, expected: &RgbaImage) -> Difference {
     let hd2 = half_diff(actual, expected);
 
     // Combine the two half_diff results: _both_ must be small for the output to be small.
-    let raw_diff_image: GrayImage = GrayImage::from_fn(hd1.width(), hd1.height(), |x, y| {
-        hd1.get_pixel(x, y)
-            .map2(hd2.get_pixel(x, y), std::cmp::Ord::max)
-    });
+    let raw_diff_image: ImgVec<u8> = ImgVec::new(
+        (0..hd1.height())
+            .flat_map(|y| {
+                (0..hd1.width()).map({
+                    let hd1 = &hd1;
+                    let hd2 = &hd2;
+                    move |x| core::cmp::max(hd1[(x, y)], hd2[(x, y)])
+                })
+            })
+            .collect(),
+        hd1.width(),
+        hd1.height(),
+    );
 
     // Compute a histogram of difference sizes.
     let mut histogram: [usize; 256] = [0; 256];
     for diff_value in raw_diff_image.pixels() {
-        let diff_value: u8 = diff_value[0];
-        histogram[diff_value as usize] += 1;
+        histogram[usize::from(diff_value)] += 1;
     }
     let histogram = Histogram(histogram);
 
@@ -70,10 +77,14 @@ pub fn diff(actual: &RgbaImage, expected: &RgbaImage) -> Difference {
         histogram,
         diff_image: Some(crate::visualize::visualize(
             expected,
-            &raw_diff_image,
+            raw_diff_image.as_ref(),
             &histogram,
         )),
     }
+}
+
+fn dimensions<T>(image: imgref::ImgRef<'_, T>) -> [usize; 2] {
+    [image.width(), image.height()]
 }
 
 /// Compare each pixel of `have` against a neighborhood of `want` (ignoring the edge).
@@ -83,80 +94,75 @@ pub fn diff(actual: &RgbaImage, expected: &RgbaImage) -> Difference {
 /// could allow a 1-pixel line in `want` to completely vanish. By performing the same
 /// comparison in both directions, we ensure that each color in each image must also
 /// appear in the other image.
-fn half_diff(have: &RgbaImage, want: &RgbaImage) -> GrayImage {
-    let (width, height) = have.dimensions();
-    let have_elems = have.view(1, 1, width - 2, height - 2);
+fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec<u8> {
+    let have_elems = have.sub_image(1, 1, have.width() - 2, have.height() - 2);
 
     let mut buffer: Vec<u8> = Vec::new();
-    for (x, y, hpixel) in have_elems.pixels() {
-        // The x and y we get from the iterator start at (0, 0) ignoring our offset,
+    for (x, y, have_pixel) in have_elems
+        .rows()
+        .enumerate()
+        .flat_map(|(y, row)| row.iter().enumerate().map(move |(x, &pixel)| (x, y, pixel)))
+    {
+        // The x and y we get from the enumerate()s start at (0, 0) ignoring our offset,
         // so when we use those same x,y as top-left corner of the neighborhood,
         // we get a centered neighborhood.
-        let neighborhood = want.view(x, y, 3, 3);
+        let neighborhood = want.sub_image(x, y, 3, 3);
         let minimum_diff_in_neighborhood: u8 = neighborhood
             .pixels()
-            .map(|(_, _, wpixel)| pixel_diff(hpixel, wpixel))
+            .map(|want_pixel| pixel_diff(have_pixel, want_pixel))
             .min()
             .expect("neighborhood is never empty");
         buffer.push(minimum_diff_in_neighborhood);
     }
 
-    GrayImage::from_raw(have_elems.width(), have_elems.height(), buffer).unwrap()
+    ImgVec::new(buffer, have_elems.width(), have_elems.height())
 }
 
 /// Compare two pixel values and produce a difference magnitude.
 ///
-/// TODO: This function should be replaceable by the caller of `diff()` instead.
-fn pixel_diff(a: Rgba<u8>, b: Rgba<u8>) -> u8 {
+/// TODO: This function should be replaceable by the caller of `diff()` instead,
+/// allowing the caller to choose a perceptual or encoded difference function,
+/// and choose how they wish to treat alpha.
+fn pixel_diff(a: RgbaPixel, b: RgbaPixel) -> u8 {
     // Diff each channel independently, then convert the difference to luma.
-    // Note: this is not theoretically correct in that sRGB nonlinearity
-    // means we're under-counting the brightness difference, but `image`
-    // is also doing it with linear arithmetic anyway:
-    // <https://docs.rs/image/0.24.2/src/image/color.rs.html#473>
-    let channel_diffs = a.map2(&b, u8::abs_diff);
-    let color_diff = channel_diffs.to_luma()[0];
-    let alpha_diff = channel_diffs[3];
-    color_diff.max(alpha_diff)
+    // Note: this is a very naive comparison, but
+    let r_diff = a[0].abs_diff(b[0]);
+    let g_diff = a[1].abs_diff(b[1]);
+    let b_diff = a[2].abs_diff(b[2]);
+    let a_diff = a[3].abs_diff(b[3]);
+
+    let color_diff = crate::image::rgba_to_luma([r_diff, g_diff, b_diff, 255]);
+
+    color_diff.max(a_diff).min(255)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::image::luma_to_rgba;
     use crate::Threshold;
-    use image::{buffer::ConvertBuffer, ImageBuffer, Pixel, Rgba};
+    use imgref::{Img, ImgExt as _};
 
     /// Run [`diff()`] against two images defined as vectors,
     /// with an added border.
-    fn diff_vecs<P: Pixel>(
-        (width, height): (u32, u32),
-        actual_data: Vec<P::Subpixel>,
-        expected_data: Vec<P::Subpixel>,
-        border_value: P,
-    ) -> Difference
-    where
-        ImageBuffer<P, Vec<P::Subpixel>>: ConvertBuffer<RgbaImage>,
-    {
-        let expected = add_border(
-            border_value,
-            ImageBuffer::from_raw(width, height, expected_data)
-                .expect("wrong expected_data length"),
-        );
-        let actual = add_border(
-            border_value,
-            ImageBuffer::from_raw(width, height, actual_data).expect("wrong actual_data length"),
-        );
-        diff(&actual.convert(), &expected.convert())
+    fn diff_vecs(
+        (width, height): (usize, usize),
+        actual_data: Vec<RgbaPixel>,
+        expected_data: Vec<RgbaPixel>,
+        border_value: RgbaPixel,
+    ) -> Difference {
+        let expected = add_border(border_value, ImgVec::new(expected_data, width, height));
+        let actual = add_border(border_value, ImgVec::new(actual_data, width, height));
+        diff(actual.as_ref(), expected.as_ref())
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    fn add_border<P: Pixel>(
-        border_value: P,
-        image: ImageBuffer<P, Vec<P::Subpixel>>,
-    ) -> ImageBuffer<P, Vec<P::Subpixel>> {
-        let (width, height) = image.dimensions();
-        ImageBuffer::from_fn(width + 2, height + 2, |x, y| {
+    fn add_border<P: Copy>(border_value: P, image: ImgVec<P>) -> ImgVec<P> {
+        let width = image.width();
+        let height = image.height();
+        crate::image::from_fn(width + 2, height + 2, |x, y| {
             if (1..=width).contains(&x) && (1..=height).contains(&y) {
-                *image.get_pixel(x - 1, y - 1)
+                image[(x - 1, y - 1)]
             } else {
                 border_value
             }
@@ -165,11 +171,13 @@ mod tests {
 
     #[test]
     fn simple_equality() {
-        let image: RgbaImage =
-            GrayImage::from_raw(3, 3, vec![0, 255, 128, 0, 255, 12, 255, 13, 99])
-                .unwrap()
-                .convert();
-        let diff_result = dbg!(diff(&image, &image));
+        let image = Img::new(
+            [0, 255, 128, 0, 255, 12, 255, 13, 99].map(luma_to_rgba),
+            3,
+            3,
+        );
+        let image = image.as_ref();
+        let diff_result = dbg!(diff(image, image));
 
         let mut expected_histogram = [0; 256];
         expected_histogram[0] = 1;
@@ -193,25 +201,25 @@ mod tests {
         // Try both orders; result should be symmetric except for the diff image
         let result_of_negative_difference = dbg!(diff_vecs(
             (1, 1),
-            vec![base_pixel_value, base_pixel_value, base_pixel_value, 255],
-            vec![
+            vec![[base_pixel_value, base_pixel_value, base_pixel_value, 255]],
+            vec![[
                 base_pixel_value + delta,
                 base_pixel_value,
                 base_pixel_value,
                 255
-            ],
-            Rgba([base_pixel_value, base_pixel_value, base_pixel_value, 255]),
+            ]],
+            [base_pixel_value, base_pixel_value, base_pixel_value, 255],
         ));
         let result_of_positive_difference = dbg!(diff_vecs(
             (1, 1),
-            vec![
+            vec![[
                 base_pixel_value + delta,
                 base_pixel_value,
                 base_pixel_value,
                 255
-            ],
-            vec![base_pixel_value, base_pixel_value, base_pixel_value, 255],
-            Rgba([base_pixel_value, base_pixel_value, base_pixel_value, 255]),
+            ]],
+            vec![[base_pixel_value, base_pixel_value, base_pixel_value, 255]],
+            [base_pixel_value, base_pixel_value, base_pixel_value, 255],
         ));
 
         // Note that the diff image is constructed using the expected image, not actual.
@@ -219,28 +227,22 @@ mod tests {
             result_of_positive_difference,
             Difference {
                 histogram: Histogram(expected_histogram),
-                diff_image: Some(
-                    RgbaImage::from_raw(
-                        1,
-                        1,
-                        vec![(base_pixel_value) / display_scale, 255, 255, 255]
-                    )
-                    .unwrap()
-                )
+                diff_image: Some(ImgVec::new(
+                    vec![[(base_pixel_value) / display_scale, 255, 255, 255]],
+                    1,
+                    1,
+                ))
             }
         );
         assert_eq!(
             result_of_negative_difference,
             Difference {
                 histogram: Histogram(expected_histogram),
-                diff_image: Some(
-                    RgbaImage::from_raw(
-                        1,
-                        1,
-                        vec![(base_pixel_value + dred) / display_scale, 255, 255, 255]
-                    )
-                    .unwrap()
-                )
+                diff_image: Some(ImgVec::new(
+                    vec![[(base_pixel_value + dred) / display_scale, 255, 255, 255]],
+                    1,
+                    1,
+                ))
             }
         );
 
@@ -259,19 +261,20 @@ mod tests {
     /// Once we do, this test is moot.
     #[test]
     fn diff_image_size() {
-        let image1: RgbaImage = RgbaImage::from_fn(10, 10, |_, _| Rgba([1, 2, 3, 255]));
-        let image2: RgbaImage = RgbaImage::from_fn(10, 10, |_, _| Rgba([100, 200, 255, 255]));
-        let diff_result = diff(&image1, &image2);
+        let image1 = crate::image::from_fn(10, 10, |_, _| [1, 2, 3, 255]);
+        let image2 = crate::image::from_fn(10, 10, |_, _| [100, 200, 255, 255]);
+        let diff_result = diff(image1.as_ref(), image2.as_ref());
 
-        assert_eq!(diff_result.diff_image.unwrap().dimensions(), (8, 8));
+        let diff_image = diff_result.diff_image.unwrap();
+        assert_eq!((diff_image.width(), diff_image.height()), (8, 8));
     }
 
     #[test]
     fn mismatched_sizes() {
-        let expected = ImageBuffer::from_raw(1, 1, vec![0, 0, 0, 255u8]).unwrap();
-        let actual = ImageBuffer::from_raw(1, 2, vec![0, 0, 0, 255, 0, 0, 0, 255u8]).unwrap();
+        let expected = ImgRef::new(&[[0, 0, 0, 255u8]], 1, 1);
+        let actual = ImgRef::new(&[[0, 0, 0, 255], [0, 0, 0, 255u8]], 1, 2);
         assert_eq!(
-            diff(&actual, &expected),
+            diff(actual, expected),
             Difference {
                 histogram: {
                     let mut h = [0; 256];

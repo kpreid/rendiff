@@ -9,8 +9,11 @@ license = "MIT OR Apache-2.0"
 categories = ["development-tools::testing", "game-development", "multimedia::images", "rendering"]
 
 [dependencies]
-image = { workspace = true, default-features = false }
 embed-doc-image = { workspace = true }
+imgref = { workspace = true, default-features = false }
 
 [dev-dependencies]
-image = { workspace = true, features = ["png"] }
+# used to load images for tests
+image = { workspace = true, default-features = false, features = ["png"] }
+interop = { workspace = true }
+

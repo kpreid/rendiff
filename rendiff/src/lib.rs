@@ -94,6 +94,13 @@
 #![warn(unreachable_pub)]
 #![warn(unused_lifetimes)]
 
+/// `rendiff` uses image types from `imgref`.
+pub use ::imgref;
+
+type RgbaPixel = [u8; 4];
+
+mod image;
+
 mod diff;
 pub use diff::*;
 

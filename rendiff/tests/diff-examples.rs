@@ -8,11 +8,11 @@ use std::path::Path;
 fn diff_example_robot() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("example-comparisons");
     eprintln!("Dir: {root:?}");
-    let input_actual = image::open(dbg!(root.join("robot-actual.png"))).unwrap();
-    let input_expected = image::open(root.join("robot-exp.png")).unwrap();
-    let expected_diff = image::open(root.join("robot-diff.png")).unwrap();
+    let input_actual = load_and_convert(&dbg!(root.join("robot-actual.png"))).unwrap();
+    let input_expected = load_and_convert(&root.join("robot-exp.png")).unwrap();
+    let expected_diff = load_and_convert(&root.join("robot-diff.png")).unwrap();
 
-    let difference = rendiff::diff(&input_actual.to_rgba8(), &input_expected.to_rgba8());
+    let difference = rendiff::diff(input_actual.as_ref(), input_expected.as_ref());
 
     assert_eq!(
         difference.histogram,
@@ -26,7 +26,11 @@ fn diff_example_robot() {
         })
     );
     assert_eq!(
-        expected_diff.to_rgba8(),
+        expected_diff,
         difference.diff_image.expect("should have diff image")
     );
+}
+
+fn load_and_convert(path: &Path) -> Result<imgref::ImgVec<[u8; 4]>, image::ImageError> {
+    Ok(interop::from_rgba(image::open(path)?.to_rgba8()))
 }

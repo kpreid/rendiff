@@ -30,13 +30,13 @@ fn main() -> anyhow::Result<ExitCode> {
         diff: diff_path,
     } = Args::parse();
 
-    let actual = open_with_context("actual image", &actual)?;
-    let expected = open_with_context("expected image", &expected)?;
+    let actual = interop::from_rgba(open_with_context("actual image", &actual)?);
+    let expected = interop::from_rgba(open_with_context("expected image", &expected)?);
 
-    let difference = rendiff::diff(&actual, &expected);
+    let difference = rendiff::diff(actual.as_ref(), expected.as_ref());
 
     if let (Some(diff_image), Some(diff_path)) = (&difference.diff_image, &diff_path) {
-        diff_image
+        interop::into_rgba(diff_image.clone())
             .save(&diff_path)
             .with_context(|| format!("failed to write '{}'", diff_path.display()))?;
     }

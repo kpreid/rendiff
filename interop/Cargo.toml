@@ -1,0 +1,15 @@
+[package]
+name = "interop"
+edition = "2021"
+rust-version.workspace = true
+repository.workspace = true
+description = "Conversion between `image` and `imgref` data types."
+publish = false # only used within this workspace
+
+[lib]
+bench = false
+doctest = false
+
+[dependencies]
+image = { workspace = true }
+imgref = { workspace = true }

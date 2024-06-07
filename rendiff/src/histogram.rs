@@ -1,4 +1,4 @@
-use std::fmt;
+use core::fmt;
 
 /// A [histogram] of color difference values.
 ///
