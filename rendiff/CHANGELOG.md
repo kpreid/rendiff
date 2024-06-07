@@ -4,7 +4,7 @@
 
 ### Breaking changes
 
-TODO: Fill in this section
+* No longer depends on the `image` package; all image types have been replaced with the much stabler [`imgref`](https://docs.rs/imgref/1/).
 
 ## 0.1.1 (2024-06-08)
 

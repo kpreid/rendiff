@@ -13,6 +13,7 @@ Packages in this repository
 
 * `rendiff/` is the library containing the algorithm.
 * `cli/` (package name `rendiff-cli`) is a command-line tool to run the algorithm on pairs of image files.
+* `interop/` is used only for shared code in this workspace.
 
 License
 -------

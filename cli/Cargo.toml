@@ -15,5 +15,7 @@ doc = false
 anyhow = "1.0.70"
 clap = { version = "4.2.4", default-features = false, features = ["derive", "help", "std", "usage", "wrap_help"] }
 image = { workspace = true, default-features = true }
+imgref = { workspace = true }
+interop = { workspace = true }
 mutants = { workspace = true }
 rendiff = { workspace = true }
