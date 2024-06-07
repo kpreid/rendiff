@@ -1,5 +1,4 @@
-use image::Rgba;
-use image::{buffer::ConvertBuffer, GenericImageView, GrayImage, Pixel, RgbaImage};
+use image::{GenericImageView, GrayImage, Pixel, Rgba, RgbaImage};
 
 use crate::Histogram;
 
@@ -7,13 +6,18 @@ use crate::Histogram;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub struct Difference {
+    // TODO: Make these fields private so we have more flexibility.
     /// A histogram of magnitudes of the detected differences.
     pub histogram: Histogram,
+
     /// An image intended for human viewing of which pixels are different,
     /// or [`None`] if the images had different sizes.
     ///
     /// The precise content of this image is not specified. It will be 1:1 scale with the
     /// images being compared, but it may be larger or smaller due to treatment of the edges.
+    ///
+    /// Currently, the red channel contains data from the input `expected` image,
+    /// and the blue and green channels contain differences, scaled up for high visibility.
     pub diff_image: Option<RgbaImage>,
 }
 
@@ -49,22 +53,26 @@ pub fn diff(actual: &RgbaImage, expected: &RgbaImage) -> Difference {
     let hd2 = half_diff(actual, expected);
 
     // Combine the two half_diff results: _both_ must be small for the output to be small.
-    let combined_diff: GrayImage = GrayImage::from_fn(hd1.width(), hd1.height(), |x, y| {
+    let raw_diff_image: GrayImage = GrayImage::from_fn(hd1.width(), hd1.height(), |x, y| {
         hd1.get_pixel(x, y)
             .map2(hd2.get_pixel(x, y), std::cmp::Ord::max)
     });
 
     // Compute a histogram of difference sizes.
     let mut histogram: [usize; 256] = [0; 256];
-    for diff_value in combined_diff.pixels() {
+    for diff_value in raw_diff_image.pixels() {
         let diff_value: u8 = diff_value[0];
         histogram[diff_value as usize] += 1;
     }
-    //eprintln!("{:?}", histogram);
+    let histogram = Histogram(histogram);
 
     Difference {
-        histogram: Histogram(histogram),
-        diff_image: Some(combined_diff.convert()),
+        histogram,
+        diff_image: Some(crate::visualize::visualize(
+            expected,
+            &raw_diff_image,
+            &histogram,
+        )),
     }
 }
 
@@ -121,8 +129,8 @@ mod tests {
     /// with an added border.
     fn diff_vecs<P: Pixel>(
         (width, height): (u32, u32),
-        expected_data: Vec<P::Subpixel>,
         actual_data: Vec<P::Subpixel>,
+        expected_data: Vec<P::Subpixel>,
         border_value: P,
     ) -> Difference
     where
@@ -137,7 +145,7 @@ mod tests {
             border_value,
             ImageBuffer::from_raw(width, height, actual_data).expect("wrong actual_data length"),
         );
-        diff(&expected.convert(), &actual.convert())
+        diff(&actual.convert(), &expected.convert())
     }
 
     #[allow(clippy::needless_pass_by_value)]
@@ -173,45 +181,73 @@ mod tests {
     }
 
     #[test]
-    fn simple_inequality() {
+    fn simple_inequality_thoroughly_examined() {
+        let base_pixel_value = 100u8;
         let delta = 55u8;
-        let dred = 11; // delta scaled down by being on red channel only
-
-        let expected_diff_image: RgbaImage =
-            RgbaImage::from_raw(1, 1, vec![dred, dred, dred, 255]).unwrap();
+        let dred = 11; // delta scaled down by being on red channel of the test image only
+        let display_scale = 3; // input image is divided by this when put in diff image
 
         let mut expected_histogram = [0; 256];
         expected_histogram[usize::from(dred)] = 1;
 
-        // Try both orders; result should be symmetric
-        let diff_result = dbg!(diff_vecs(
+        // Try both orders; result should be symmetric except for the diff image
+        let result_of_negative_difference = dbg!(diff_vecs(
             (1, 1),
-            vec![0, 0, 0, 255],
-            vec![delta, 0, 0, 255],
-            Rgba([0, 0, 0, 255]),
+            vec![base_pixel_value, base_pixel_value, base_pixel_value, 255],
+            vec![
+                base_pixel_value + delta,
+                base_pixel_value,
+                base_pixel_value,
+                255
+            ],
+            Rgba([base_pixel_value, base_pixel_value, base_pixel_value, 255]),
         ));
-        assert_eq!(
-            diff_result,
-            diff_vecs(
-                (1, 1),
-                vec![delta, 0, 0, 255],
-                vec![0, 0, 0, 255],
-                Rgba([0, 0, 0, 255])
-            )
-        );
+        let result_of_positive_difference = dbg!(diff_vecs(
+            (1, 1),
+            vec![
+                base_pixel_value + delta,
+                base_pixel_value,
+                base_pixel_value,
+                255
+            ],
+            vec![base_pixel_value, base_pixel_value, base_pixel_value, 255],
+            Rgba([base_pixel_value, base_pixel_value, base_pixel_value, 255]),
+        ));
 
+        // Note that the diff image is constructed using the expected image, not actual.
         assert_eq!(
-            diff_result,
+            result_of_positive_difference,
             Difference {
                 histogram: Histogram(expected_histogram),
-                diff_image: Some(expected_diff_image)
+                diff_image: Some(
+                    RgbaImage::from_raw(
+                        1,
+                        1,
+                        vec![(base_pixel_value) / display_scale, 255, 255, 255]
+                    )
+                    .unwrap()
+                )
+            }
+        );
+        assert_eq!(
+            result_of_negative_difference,
+            Difference {
+                histogram: Histogram(expected_histogram),
+                diff_image: Some(
+                    RgbaImage::from_raw(
+                        1,
+                        1,
+                        vec![(base_pixel_value + dred) / display_scale, 255, 255, 255]
+                    )
+                    .unwrap()
+                )
             }
         );
 
         assert_eq!(
             (
-                Threshold::no_bigger_than(dred - 1).allows(diff_result.histogram),
-                Threshold::no_bigger_than(dred).allows(diff_result.histogram),
+                Threshold::no_bigger_than(dred - 1).allows(result_of_positive_difference.histogram),
+                Threshold::no_bigger_than(dred).allows(result_of_positive_difference.histogram),
             ),
             (false, true)
         );
@@ -235,7 +271,7 @@ mod tests {
         let expected = ImageBuffer::from_raw(1, 1, vec![0, 0, 0, 255u8]).unwrap();
         let actual = ImageBuffer::from_raw(1, 2, vec![0, 0, 0, 255, 0, 0, 0, 255u8]).unwrap();
         assert_eq!(
-            diff(&expected, &actual),
+            diff(&actual, &expected),
             Difference {
                 histogram: {
                     let mut h = [0; 256];
