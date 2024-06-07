@@ -1,7 +1,5 @@
 use std::fmt;
 
-use itertools::Itertools;
-
 /// A [histogram] of color difference values.
 ///
 /// The histogram is represented as an array whose indices are the difference values,
@@ -24,16 +22,26 @@ impl Histogram {
 
 impl fmt::Debug for Histogram {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Histogram({})",
-            self.0
-                .into_iter()
-                .enumerate()
-                .filter(|&(delta, count)| count > 0 && (delta > 0 || f.alternate()))
-                .map(|(delta, count)| format!("Δ{delta} ×{count}"))
-                .join(", ")
-        )
+        let alternate = f.alternate();
+
+        write!(f, "Histogram(")?;
+
+        let mut first = true;
+        for (delta, count) in self
+            .0
+            .iter()
+            .enumerate()
+            .filter(|&(delta, &count)| count > 0 && (delta > 0 || alternate))
+        {
+            if first {
+                first = false;
+            } else {
+                write!(f, ", ")?;
+            }
+            write!(f, "Δ{delta} ×{count}")?;
+        }
+
+        write!(f, ")")
     }
 }
 
