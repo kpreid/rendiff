@@ -10,4 +10,3 @@ categories = ["development-tools::testing", "game-development", "multimedia::ima
 
 [dependencies]
 image = { workspace = true, default-features = false }
-itertools = { version = "0.10.5", default-features = false, features = ["use_alloc"] }
