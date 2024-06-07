@@ -217,6 +217,19 @@ mod tests {
         );
     }
 
+    /// Test that the diff image is 2 pixels smaller, as expected.
+    ///
+    /// TODO: We should have image-comparison tests applying to the diff image.
+    /// Once we do, this test is moot.
+    #[test]
+    fn diff_image_size() {
+        let image1: RgbaImage = RgbaImage::from_fn(10, 10, |_, _| Rgba([1, 2, 3, 255]));
+        let image2: RgbaImage = RgbaImage::from_fn(10, 10, |_, _| Rgba([100, 200, 255, 255]));
+        let diff_result = diff(&image1, &image2);
+
+        assert_eq!(diff_result.diff_image.unwrap().dimensions(), (8, 8));
+    }
+
     #[test]
     fn mismatched_sizes() {
         let expected = ImageBuffer::from_raw(1, 1, vec![0, 0, 0, 255u8]).unwrap();
