@@ -6,7 +6,7 @@ members = [
 ]
 
 [workspace.package]
-rust-version = "1.69.0"
+rust-version = "1.75.0"
 repository = "https://github.com/kpreid/rendiff/"
 
 [workspace.dependencies]
