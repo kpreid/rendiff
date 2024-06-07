@@ -16,19 +16,14 @@ impl Threshold {
     ///
     /// # Panics
     ///
-    /// All magnitudes must be greater than zero (zero would have no effect if it were
-    /// permitted) and less than 255 (which would make the condition never false),
-    /// or the function panics.
+    /// All magnitudes must be greater than zero (which would have no effect if it were
+    /// permitted).
     #[must_use]
     pub fn new(data: impl IntoIterator<Item = (u8, usize)>) -> Self {
         Self(
             data.into_iter()
                 .map(|kv @ (key, _)| {
                     assert!(key > 0, "putting 0 ({kv:?}) in Threshold is redundant");
-                    assert!(
-                        key < 255,
-                        "putting 255 ({kv:?}) in Threshold will make the comparison always pass"
-                    );
                     kv
                 })
                 .collect(),
@@ -130,5 +125,19 @@ mod tests {
             ),
             (false, true)
         );
+    }
+
+    #[test]
+    fn max_threshold_allows_max_diff() {
+        assert!(Threshold::new([(255, 10)]).allows({
+            let mut h = [0; 256];
+            h[255] = 10;
+            Histogram(h)
+        }));
+        assert!(!Threshold::new([(255, 10)]).allows({
+            let mut h = [0; 256];
+            h[255] = 11;
+            Histogram(h)
+        }));
     }
 }
