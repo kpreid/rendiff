@@ -18,6 +18,18 @@ pub struct Histogram(pub [usize; 256]);
 impl Histogram {
     /// The histogram with all bins zero.
     pub const ZERO: Self = Self([0; 256]);
+
+    /// Returns the maximum difference; that is, the index of the highest nonzero entry.
+    ///
+    /// Returns zero if the histogram is entirely empty.
+    #[must_use]
+    pub fn max_difference(&self) -> u8 {
+        match self.0.iter().rposition(|&count| count != 0) {
+            #[allow(clippy::cast_possible_truncation)] // impossible
+            Some(position) => position as u8,
+            None => 0,
+        }
+    }
 }
 
 impl fmt::Debug for Histogram {
@@ -69,6 +81,23 @@ mod tests {
         assert_eq!(
             format!("{histogram:#?}"),
             "Histogram(Δ0 ×1000, Δ10 ×5, Δ50 ×1)"
+        );
+    }
+
+    #[test]
+    fn max_difference() {
+        assert_eq!(Histogram::ZERO.max_difference(), 0);
+        assert_eq!(Histogram([10; 256]).max_difference(), 255);
+        assert_eq!(
+            {
+                let mut h = [0; 256];
+                h[0] = 1000;
+                h[10] = 5;
+                h[50] = 1;
+                Histogram(h)
+            }
+            .max_difference(),
+            50,
         );
     }
 }
