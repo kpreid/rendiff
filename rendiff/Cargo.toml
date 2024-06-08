@@ -10,3 +10,7 @@ categories = ["development-tools::testing", "game-development", "multimedia::ima
 
 [dependencies]
 image = { workspace = true, default-features = false }
+embed-doc-image = { workspace = true }
+
+[dev-dependencies]
+image = { workspace = true, features = ["png"] }
