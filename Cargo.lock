@@ -393,7 +393,7 @@ dependencies = [
 
 [[package]]
 name = "rendiff"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "embed-doc-image",
  "image",
@@ -401,7 +401,7 @@ dependencies = [
 
 [[package]]
 name = "rendiff-cli"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
