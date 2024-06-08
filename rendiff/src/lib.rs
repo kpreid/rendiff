@@ -32,6 +32,25 @@
 //! `rendiff` is unsuitable for comparing images which have strong noise (e.g. halftone)
 //! or spatial displacements of more than one pixel.
 //!
+//! ## Example output
+//!
+//! These two cartoon robot head images are the inputs.
+//! The third image is the visual output of the diff function;
+//! red comes from the input and cyan marks differences.
+//!
+//! <div style="background: gray; text-align: center; padding: 0.7em;">
+//!
+//! ![robot-exp]
+//! ![robot-actual]
+//! ![robot-diff]
+//!
+//! </div>
+//!
+//! Note that the eyes’ shapes differ slightly, and this is ignored, but the gaps at the bottom
+//! and between the teeth are highlighted, because they are places where colors are present in
+//! one image but entirely absent in the other.
+//! These are examples of the type of rendering bug which `rendiff` is designed to catch.
+//!
 //! ## Principle of operation
 //!
 //! Suppose we are comparing two images, A and B.
@@ -54,6 +73,11 @@
 //! depending on how an edge lands with respect to the pixel grid, the color may be
 //! different. A future version of this library may solve that problem by accepting any
 //! color which is a blend of colors found in the neighborhood.
+//!
+#![doc = ::embed_doc_image::embed_image!("robot-actual", "example-comparisons/robot-actual.png")]
+#![doc = ::embed_doc_image::embed_image!("robot-diff", "example-comparisons/robot-diff.png")]
+#![doc = ::embed_doc_image::embed_image!("robot-exp", "example-comparisons/robot-exp.png")]
+//!
 
 // This list is sorted.
 #![forbid(rust_2018_idioms)]
