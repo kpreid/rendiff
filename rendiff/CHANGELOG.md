@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 (release date TBD)
+
+### Breaking changes
+
+TODO: Fill in this section
+
 ## 0.1.1 (2024-06-08)
 
 ### Added

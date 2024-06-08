@@ -10,6 +10,8 @@ rust-version = "1.75.0"
 repository = "https://github.com/kpreid/rendiff/"
 
 [workspace.dependencies]
+rendiff = { version = "0.2.0", path = "rendiff/" }
+
 embed-doc-image = { version = "0.1.4" }
 image = { version = "0.24.6", default-features = false }
 mutants = "0.0.3"
