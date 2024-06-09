@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (release date TBD)
+## 0.2.0 (2024-06-09)
 
 This release consists of the following **breaking changes**:
 
