@@ -97,6 +97,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: Swatinem/rust-cache@v2.7.3
+
       - name: Install Rust toolchain
         # Not sure if this is strictly necessary -- but it is if GitHub Actions images aren't
         # always as up to date than we want.
