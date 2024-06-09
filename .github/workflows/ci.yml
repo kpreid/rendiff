@@ -69,7 +69,7 @@ jobs:
     # (for understanding build performance in CI)
     - name: Save cargo --timings output
       if: ${{ always() }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cargo-timings ${{ matrix.toolchain }}
         path: |
@@ -112,7 +112,7 @@ jobs:
 
       - name: Save results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mutation-report
           path: "*/mutants.out"
