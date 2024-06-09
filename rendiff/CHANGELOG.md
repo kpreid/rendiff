@@ -2,9 +2,12 @@
 
 ## 0.2.0 (release date TBD)
 
-### Breaking changes
+This release consists of the following **breaking changes**:
 
 * No longer depends on the `image` package; all image types have been replaced with the much stabler [`imgref`](https://docs.rs/imgref/1/).
+* `Difference` and `Threshold` no longer have public fields.
+    * `Difference` provides accessors instead.
+    * `Threshold` is write-only.
 
 ## 0.1.1 (2024-06-08)
 

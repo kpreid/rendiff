@@ -15,7 +15,7 @@ fn diff_example_robot() {
     let difference = rendiff::diff(input_actual.as_ref(), input_expected.as_ref());
 
     assert_eq!(
-        difference.histogram,
+        difference.histogram(),
         rendiff::Histogram({
             let mut h = [0; 256];
             h[85] = 20;
@@ -26,8 +26,8 @@ fn diff_example_robot() {
         })
     );
     assert_eq!(
-        expected_diff,
-        difference.diff_image.expect("should have diff image")
+        expected_diff.as_ref(),
+        difference.diff_image().expect("should have diff image")
     );
 }
 

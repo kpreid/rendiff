@@ -9,7 +9,7 @@ use crate::Histogram;
 /// towards the limit at a higher magnitude. Differences of zero are always accepted.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::exhaustive_structs)]
-pub struct Threshold(pub BTreeMap<u8, usize>);
+pub struct Threshold(BTreeMap<u8, usize>);
 
 impl Threshold {
     /// Creates a [`Threshold`] from a list of (magnitude, count) entries.
