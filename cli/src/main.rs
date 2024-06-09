@@ -35,8 +35,8 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let difference = rendiff::diff(actual.as_ref(), expected.as_ref());
 
-    if let (Some(diff_image), Some(diff_path)) = (&difference.diff_image, &diff_path) {
-        interop::into_rgba(diff_image.clone())
+    if let (Some(diff_image), Some(diff_path)) = (difference.diff_image(), &diff_path) {
+        interop::into_rgba(diff_image.map_buf(ToOwned::to_owned))
             .save(&diff_path)
             .with_context(|| format!("failed to write '{}'", diff_path.display()))?;
     }
@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<ExitCode> {
     print_results(&difference);
 
     // TODO: args for threshold
-    let equal = Threshold::no_bigger_than(0).allows(difference.histogram);
+    let equal = Threshold::no_bigger_than(0).allows(difference.histogram());
 
     Ok(if equal {
         ExitCode::SUCCESS
@@ -55,12 +55,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
 #[mutants::skip] // TODO: cli tests
 fn print_results(difference: &Difference) {
-    let Difference {
-        histogram,
-        diff_image: _,
-        ..
-    } = difference;
-    eprintln!("{:#?}", histogram);
+    eprintln!("{:#?}", difference.histogram());
 }
 
 #[mutants::skip] // TODO: cli tests

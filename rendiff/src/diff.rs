@@ -6,9 +6,17 @@ use crate::{Histogram, RgbaPixel};
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub struct Difference {
-    // TODO: Make these fields private so we have more flexibility.
+    histogram: Histogram,
+
+    diff_image: Option<imgref::ImgVec<RgbaPixel>>,
+}
+
+impl Difference {
     /// A histogram of magnitudes of the detected differences.
-    pub histogram: Histogram,
+    #[must_use]
+    pub fn histogram(&self) -> Histogram {
+        self.histogram
+    }
 
     /// An sRGB RGBA image intended for human viewing of which pixels are different,
     /// or [`None`] if the images had different sizes.
@@ -18,7 +26,10 @@ pub struct Difference {
     ///
     /// Currently, the red channel contains data from the input `expected` image,
     /// and the blue and green channels contain differences, scaled up for high visibility.
-    pub diff_image: Option<imgref::ImgVec<RgbaPixel>>,
+    #[must_use]
+    pub fn diff_image(&self) -> Option<ImgRef<'_, RgbaPixel>> {
+        self.diff_image.as_ref().map(imgref::ImgExt::as_ref)
+    }
 }
 
 /// Compares two RGBA images with a neighborhood-sensitive comparison which counts one pixel worth
