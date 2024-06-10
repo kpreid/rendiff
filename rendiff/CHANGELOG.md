@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 (2024-06-10)
+
+This release only affects documentation.
+
+* Add more documentation and more example code.
+* Correct obsolete remark about `image` dependency in the package README.
+
 ## 0.2.0 (2024-06-09)
 
 This release consists of the following **breaking changes**:
