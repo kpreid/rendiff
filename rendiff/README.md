@@ -13,12 +13,11 @@ See the library documentation for details on the algorithm used.
 Stability
 ---------
 
-`rendiff` is being used within one of my other projects (`all-is-cubes`) and reliably performs its function. However, there are several features that it lacks, which may result in API changes in future versions:
+`rendiff` is being used within one of my other projects (`all-is-cubes`) and reliably performs its function. However, there are several features that it lacks, which may result in breaking API or behavior changes in future versions:
 
 * Customizing the pixel comparison (color value distance) function.
-* More effective comparison of antialiased images.
-* Processing images of greater than 8 bits-per-component.
-* Not requiring the input to use the image type from [the `image` library](https://docs.rs/image/latest/image/).
+* Allowance for antialiased edges.
+* Input images of greater than 8 bits-per-component.
 
 License
 -------
