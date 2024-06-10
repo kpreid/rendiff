@@ -5,7 +5,6 @@
 //! hardware, causing small “rounding errors” in either color or spatial position.
 //!
 //! To use it, call [`diff()`] on your images, and test the result against a [`Threshold`].
-// TODO: Add example code here.
 //!
 //! ## When to use this library
 //!
@@ -50,6 +49,59 @@
 //! and between the teeth are highlighted, because they are places where colors are present in
 //! one image but entirely absent in the other.
 //! These are examples of the type of rendering bug which `rendiff` is designed to catch.
+//!
+//! ## Example usage
+//!
+//! ```
+//! use rendiff::Threshold;
+//!
+//! // In a real application, you would load the expected image from disk and
+//! // the actual image from the output of your renderer or other image processor.
+//! // For this example, we'll embed some very simple images as text.
+//!
+//! fn ascii_image(s: &str) -> Vec<[u8; 4]> {
+//!     s.chars().map(|ch| {
+//!         let gray = u8::try_from(ch.to_digit(10).unwrap()).unwrap();
+//!         [gray, gray, gray, 255]
+//!     }).collect()
+//! }
+//!
+//! let expected_image = imgref::ImgVec::new(
+//!     ascii_image("\
+//!         00000000\
+//!         00000000\
+//!         00229900\
+//!         00229900\
+//!         00229900\
+//!         00000000\
+//!         00000000\
+//!     "),
+//!     8, 6
+//! );
+//! let actual_image = imgref::ImgVec::new(
+//!     ascii_image("\
+//!         00000000\
+//!         00000000\
+//!         00449990\
+//!         00449990\
+//!         00449990\
+//!         00000000\
+//!         00000000\
+//!     "),
+//!     8, 6
+//! );
+//!
+//! let difference = rendiff::diff(actual_image.as_ref(), expected_image.as_ref());
+//!
+//! // `difference` describes the differences found but does not define success or failure.
+//! // To do that, you must use a `Threshold`, or examine the `histogram()` yourself.
+//!
+//! assert!(Threshold::no_bigger_than(2).allows(difference.histogram()));
+//! assert!(!Threshold::no_bigger_than(1).allows(difference.histogram()));
+//!
+//! let diff_image = difference.diff_image();
+//! // You can put `diff_image` in your test report.
+//! ```
 //!
 //! ## Principle of operation
 //!

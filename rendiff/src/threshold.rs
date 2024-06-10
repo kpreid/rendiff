@@ -33,13 +33,35 @@ impl Threshold {
         )
     }
 
-    /// Allow any number of pixel differences not exceeding `level`.
+    /// Allow any number of pixel differences not exceeding `magnitude`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rendiff::{Histogram, Threshold};
+    ///
+    /// let threshold = Threshold::no_bigger_than(5);
+    ///
+    /// assert!(threshold.allows(Histogram::ZERO));
+    ///
+    /// // Differences greater than 5 are not permitted, no matter how few they are.
+    /// assert!(!threshold.allows(Histogram([1; 256])));
+    ///
+    /// // Any differences are permitted if they are less than 5.
+    /// assert!(threshold.allows(Histogram({
+    ///     let mut table = [0; 256];
+    ///     table[0] = 1000;
+    ///     table[2] = 100;
+    ///     table[4] = 10;
+    ///     table
+    /// })));
+    /// ```
     #[must_use]
-    pub fn no_bigger_than(level: u8) -> Self {
-        if level == 0 {
+    pub fn no_bigger_than(magnitude: u8) -> Self {
+        if magnitude == 0 {
             Self::new([])
         } else {
-            Self::new([(level, usize::MAX)])
+            Self::new([(magnitude, usize::MAX)])
         }
     }
 
