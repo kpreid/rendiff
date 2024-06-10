@@ -26,9 +26,21 @@ impl Histogram {
     /// The histogram with all bins zero.
     pub const ZERO: Self = Self([0; 256]);
 
-    /// Returns the maximum difference; that is, the index of the highest nonzero entry.
+    /// Returns the maximum difference; that is, the index of the highest entry whose count
+    /// is not zero.
     ///
     /// Returns zero if the histogram is entirely empty.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let mut histogram = rendiff::Histogram::ZERO;
+    /// assert_eq!(histogram.max_difference(), 0);
+    ///
+    /// histogram.0[10] = 44;
+    /// histogram.0[50] = 17;
+    /// assert_eq!(histogram.max_difference(), 50);
+    /// ```
     #[must_use]
     pub fn max_difference(&self) -> u8 {
         match self.0.iter().rposition(|&count| count != 0) {
