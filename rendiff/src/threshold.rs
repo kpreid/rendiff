@@ -2,17 +2,20 @@ use std::collections::BTreeMap;
 
 use crate::Histogram;
 
-/// A bound upon pixel differences observed in a [`Difference`](crate::Difference).
-///
-/// Each entry means “There may be up to &lt;value&gt; differences of magnitude
-/// &lt;key&gt; or less”. Lower magnitudes that are accepted by a lower entry don't count
-/// towards the limit at a higher magnitude. Differences of zero are always accepted.
+/// A bound upon pixel differences observed in a [`Histogram`](crate::Histogram),
+/// which you may use to define the pass/fail criterion for your image comparison test.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::exhaustive_structs)]
 pub struct Threshold(BTreeMap<u8, usize>);
 
 impl Threshold {
-    /// Creates a [`Threshold`] from a list of (magnitude, count) entries.
+    /// Creates a [`Threshold`] from a list of (magnitude, count) pairs.
+    ///
+    /// Each pair means “There may be up to &lt;count&gt; differences of magnitude
+    /// &lt;magnitude&gt; or less”.
+    /// Lower magnitudes that are accepted by a lower entry don't count towards
+    /// the limit at a higher magnitude.
+    /// Differences of zero are always accepted.
     ///
     /// # Panics
     ///
@@ -40,9 +43,8 @@ impl Threshold {
         }
     }
 
-    /// Returns whether the differences described by the given [`Histogram`] are smaller
-    /// than this [`Threshold`] permits.
-    // TODO: rename
+    /// Returns whether the differences described by the given [`Histogram`] are permitted
+    /// by this [`Threshold`].
     #[must_use]
     pub fn allows(&self, histogram: Histogram) -> bool {
         // Skip the first entry and always accept any number of zero-value differences.
