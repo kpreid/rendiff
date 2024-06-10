@@ -2,7 +2,7 @@ use imgref::{ImgRef, ImgVec};
 
 use crate::{Histogram, RgbaPixel};
 
-/// Output of [`diff()`], a comparison between two images.
+/// Output of [`diff()`]; a comparison between two images.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub struct Difference {

@@ -1,13 +1,20 @@
 use core::fmt;
 
-/// A [histogram] of color difference values.
+#[cfg(doc)]
+use crate::{Difference, Threshold};
+
+/// A [histogram] of color differences.
 ///
-/// The histogram is represented as an array whose indices are the difference values,
-/// and whose values are the count of how many differences of that value were found.
+/// Obtain this from [`Difference::histogram()`], and compare it to a [`Threshold`]
+/// to decide whether your image comparison test passes or fails.
+///
+/// The histogram is represented as an array whose indices are the difference magnitudes,
+/// and whose values are the count of how many differences of that magnitude were found.
 /// (For example, the first (index `0`) element of the array contains a count of the pixels
 /// that were considered equal.)
 ///
-/// This type does not attribute any meaning, units, scale, or linearity to the difference values;
+/// This type does not attribute any meaning, units, scale, or linearity to the difference
+/// magnitudes;
 /// only that there are 256 of them, they are ordered, and `0` is no difference.
 ///
 /// [histogram]: https://en.wikipedia.org/wiki/Histogram
