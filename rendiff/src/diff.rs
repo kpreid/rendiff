@@ -108,7 +108,7 @@ fn dimensions<T>(image: imgref::ImgRef<'_, T>) -> [usize; 2] {
 fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec<u8> {
     let have_elems = have.sub_image(1, 1, have.width() - 2, have.height() - 2);
 
-    let mut buffer: Vec<u8> = Vec::new();
+    let mut buffer: Vec<u8> = Vec::with_capacity(have_elems.width() * have_elems.height());
     for (x, y, have_pixel) in have_elems
         .rows()
         .enumerate()
