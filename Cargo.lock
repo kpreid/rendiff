@@ -413,6 +413,7 @@ dependencies = [
  "image",
  "imgref",
  "interop",
+ "mutants",
 ]
 
 [[package]]
