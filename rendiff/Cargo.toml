@@ -16,4 +16,5 @@ imgref = { workspace = true, default-features = false }
 # used to load images for tests
 image = { workspace = true, default-features = false, features = ["png"] }
 interop = { workspace = true }
+mutants = { workspace = true }
 

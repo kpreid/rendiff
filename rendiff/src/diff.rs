@@ -108,7 +108,7 @@ fn dimensions<T>(image: imgref::ImgRef<'_, T>) -> [usize; 2] {
 fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec<u8> {
     let have_elems = have.sub_image(1, 1, have.width() - 2, have.height() - 2);
 
-    let mut buffer: Vec<u8> = Vec::with_capacity(have_elems.width() * have_elems.height());
+    let mut buffer: Vec<u8> = vec_for_same_size_image(have);
     for (y, have_row) in have_elems.rows().enumerate() {
         // Precalculate the rows in `want` that we're going to be fetching neighborhoods from.
         let want_rows: [&[RgbaPixel]; 3] = {
@@ -164,6 +164,12 @@ fn pixel_diff(a: RgbaPixel, b: RgbaPixel) -> u8 {
     let color_diff = crate::image::rgba_to_luma([r_diff, g_diff, b_diff, 255]);
 
     color_diff.max(a_diff).min(255)
+}
+
+#[cfg_attr(test, mutants::skip)] // Not really testable.
+fn vec_for_same_size_image<T>(image: ImgRef<'_, impl Sized>) -> Vec<T> {
+    // We should not use `image.buf().len()` because that includes stride.
+    Vec::with_capacity(image.width() * image.height())
 }
 
 #[cfg(test)]
@@ -313,6 +319,49 @@ mod tests {
                 },
                 diff_image: None
             }
+        );
+    }
+
+    /// Verify that the neighborhood comparison covers the expected neighborhood
+    /// (currently a 3×3 square).
+    #[test]
+    fn shape_of_neighborhood() {
+        let test_image_with_center_pixel = crate::image::from_fn(7, 7, |x, y| {
+            if (x, y) == (3, 3) {
+                [255, 255, 255, 255]
+            } else {
+                [0, 0, 0, 255]
+            }
+        });
+
+        let passes_if_pixel_is_here = crate::image::from_fn(7, 7, |place_x, place_y| {
+            let test_image_with_displaced_pixel = crate::image::from_fn(7, 7, |x, y| {
+                if (x, y) == (place_x, place_y) {
+                    [255, 255, 255, 255]
+                } else {
+                    [0, 0, 0, 255]
+                }
+            });
+
+            diff(
+                test_image_with_displaced_pixel.as_ref(),
+                test_image_with_center_pixel.as_ref(),
+            )
+            .histogram()
+            .max_difference()
+                == 0
+        });
+        assert_eq!(
+            passes_if_pixel_is_here.into_buf(),
+            vec![
+                false, false, false, false, false, false, false, //
+                false, false, false, false, false, false, false, //
+                false, false, true, true, true, false, false, //
+                false, false, true, true, true, false, false, //
+                false, false, true, true, true, false, false, //
+                false, false, false, false, false, false, false, //
+                false, false, false, false, false, false, false, //
+            ]
         );
     }
 }
