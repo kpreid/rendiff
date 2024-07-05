@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::time::Instant;
 
 use anyhow::Context;
 use clap::Parser;
@@ -33,7 +34,17 @@ fn main() -> anyhow::Result<ExitCode> {
     let actual = interop::from_rgba(open_with_context("actual image", &actual)?);
     let expected = interop::from_rgba(open_with_context("expected image", &expected)?);
 
+    let t_start = Instant::now();
+
     let difference = rendiff::diff(actual.as_ref(), expected.as_ref());
+
+    let t_finish_diff = Instant::now();
+    eprintln!(
+        "Time: {elapsed:?} to calculate diff of {w}×{h} image",
+        elapsed = t_finish_diff.saturating_duration_since(t_start),
+        w = actual.width(),
+        h = actual.height(),
+    );
 
     if let (Some(diff_image), Some(diff_path)) = (difference.diff_image(), &diff_path) {
         interop::into_rgba(diff_image.map_buf(ToOwned::to_owned))
