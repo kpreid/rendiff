@@ -110,6 +110,13 @@ fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec
 
     let mut buffer: Vec<u8> = Vec::with_capacity(have_elems.width() * have_elems.height());
     for (y, have_row) in have_elems.rows().enumerate() {
+        // Precalculate the rows in `want` that we're going to be fetching neighborhoods from.
+        let want_rows: [&[RgbaPixel]; 3] = {
+            // The row iterator overrides nth() which makes skip() O(1).
+            let mut iter = want.rows().skip(y);
+            std::array::from_fn(|_| iter.next().unwrap_or(/* unreachable */ &[]))
+        };
+
         for (x, &have_pixel) in have_row.iter().enumerate() {
             // Note on coordinates:
             // The x and y we get from the enumerate()s start at (0, 0) ignoring our offset,
@@ -119,15 +126,15 @@ fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec
             // Note on performance: this mess of explicit indexing proved faster than
             // `want.sub_image().pixels()`, and also faster than iterating over slices.
             let neighborhood = [
-                want[(x, y)],
-                want[(x + 1, y)],
-                want[(x + 2, y)],
-                want[(x, y + 1)],
-                want[(x + 1, y + 1)],
-                want[(x + 2, y + 1)],
-                want[(x, y + 2)],
-                want[(x + 1, y + 2)],
-                want[(x + 2, y + 2)],
+                want_rows[0][x],
+                want_rows[0][x + 1],
+                want_rows[0][x + 2],
+                want_rows[1][x],
+                want_rows[1][x + 1],
+                want_rows[1][x + 2],
+                want_rows[2][x],
+                want_rows[2][x + 1],
+                want_rows[2][x + 2],
             ];
             let minimum_diff_in_neighborhood: u8 = neighborhood
                 .into_iter()
