@@ -114,12 +114,26 @@ fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec
         .enumerate()
         .flat_map(|(y, row)| row.iter().enumerate().map(move |(x, &pixel)| (x, y, pixel)))
     {
+        // Note on coordinates:
         // The x and y we get from the enumerate()s start at (0, 0) ignoring our offset,
         // so when we use those same x,y as top-left corner of the neighborhood,
         // we get a centered neighborhood.
-        let neighborhood = want.sub_image(x, y, 3, 3);
+        //
+        // Note on performance: this mess of explicit indexing proved faster than
+        // `want.sub_image().pixels()`, and also faster than iterating over slices.
+        let neighborhood = [
+            want[(x, y)],
+            want[(x + 1, y)],
+            want[(x + 2, y)],
+            want[(x, y + 1)],
+            want[(x + 1, y + 1)],
+            want[(x + 2, y + 1)],
+            want[(x, y + 2)],
+            want[(x + 1, y + 2)],
+            want[(x + 2, y + 2)],
+        ];
         let minimum_diff_in_neighborhood: u8 = neighborhood
-            .pixels()
+            .into_iter()
             .map(|want_pixel| pixel_diff(have_pixel, want_pixel))
             .min()
             .expect("neighborhood is never empty");
