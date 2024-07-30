@@ -20,11 +20,12 @@ env:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         toolchain: [stable, beta, nightly, "1.75.0"]
 
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.toolchain != 'stable' }}
+    continue-on-error: false
 
     steps:
     - uses: actions/checkout@v4
@@ -40,18 +41,18 @@ jobs:
 
     - name: Lint
       run: |
-        cargo clippy --timings
+        cargo clippy
         cargo rustdoc --package=rendiff -- -Drustdoc::broken_intra_doc_links
 
     - name: Compile (no features)
       # compile is broken out so we have visibility into compile vs. run times
-      run: cargo test --no-default-features --timings --no-run
+      run: cargo test --no-default-features --no-run
 
     - name: Run tests (no features)
       run: cargo test --no-default-features
 
     - name: Compile (all features)
-      run: cargo test --all-features --timings --no-run
+      run: cargo test --all-features --no-run
 
     - name: Run tests (all features)
       run: cargo test --all-features
@@ -60,20 +61,40 @@ jobs:
       run: cargo update
 
     - name: Compile with updates
-      run: cargo test --timings --no-run
+      run: cargo test --no-run
 
     - name: Test with updates
-      run: cargo test --timings
+      run: cargo test
 
-    # Save timing reports so we can download and view them
-    # (for understanding build performance in CI)
-    - name: Save cargo --timings output
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: cargo-timings ${{ matrix.toolchain }}
-        path: |
-          target/cargo-timings/cargo-timing-*.html
+  lint:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, beta, nightly]
+
+    runs-on: ubuntu-latest
+    continue-on-error: false
+
+    # Cause all warnings to turn into errors, failing this job.
+    env:
+      RUSTFLAGS: '-Dwarnings'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      # Install exactly what we need: compiler, Cargo, clippy
+      run: |
+          rustup toolchain install "${{ matrix.toolchain }}" --profile=minimal --component=clippy
+          rustup override set "${{ matrix.toolchain }}"
+
+    # Load cache before doing any Rust builds
+    - uses: Swatinem/rust-cache@v2.7.3
+
+    - name: Lint
+      run: |
+        cargo clippy --all-features
+        cargo doc --all-features
 
   semver:
     runs-on: ubuntu-latest
