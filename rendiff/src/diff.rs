@@ -163,7 +163,7 @@ fn pixel_diff(a: RgbaPixel, b: RgbaPixel) -> u8 {
 
     let color_diff = crate::image::rgba_to_luma([r_diff, g_diff, b_diff, 255]);
 
-    color_diff.max(a_diff).min(255)
+    color_diff.max(a_diff)
 }
 
 #[cfg_attr(test, mutants::skip)] // Not really testable.
