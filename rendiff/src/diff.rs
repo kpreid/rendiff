@@ -117,7 +117,7 @@ fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec
             std::array::from_fn(|_| iter.next().unwrap_or(/* unreachable */ &[]))
         };
 
-        for (x, &have_pixel) in have_row.iter().enumerate() {
+        buffer.extend(have_row.iter().enumerate().map(move |(x, &have_pixel)| {
             // Note on coordinates:
             // The x and y we get from the enumerate()s start at (0, 0) ignoring our offset,
             // so when we use those same x,y as top-left corner of the neighborhood,
@@ -141,8 +141,8 @@ fn half_diff(have: ImgRef<'_, RgbaPixel>, want: ImgRef<'_, RgbaPixel>) -> ImgVec
                 .map(|want_pixel| pixel_diff(have_pixel, want_pixel))
                 .min()
                 .expect("neighborhood is never empty");
-            buffer.push(minimum_diff_in_neighborhood);
-        }
+            minimum_diff_in_neighborhood
+        }));
     }
 
     ImgVec::new(buffer, have_elems.width(), have_elems.height())
