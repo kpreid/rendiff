@@ -1,7 +1,7 @@
 [package]
 name = "rendiff"
 version = "0.2.1"
-edition = "2021"
+edition = "2024"
 rust-version = { workspace = true }
 repository = { workspace = true }
 description = "Image comparison (diffing) for computer graphics renderer test cases."
