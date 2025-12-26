@@ -67,34 +67,72 @@ impl Threshold {
 
     /// Returns whether the differences described by the given [`Histogram`] are permitted
     /// by this [`Threshold`].
+    ///
+    /// This is equivalent to `self.remove_allowed_differences_from(histogram) == Histogram::ZERO`.
     #[must_use]
     pub fn allows(&self, histogram: Histogram) -> bool {
-        // Skip the first entry and always accept any number of zero-value differences.
-        let mut checked_up_to = 1;
-        // Loop over the thresholds, always in ascending order.
-        for (&level, &count) in &self.0 {
-            // Add 1 because the level value *includes* differences of that level, i.e.
-            // level 1 should include checking histogram[1].
-            let new_checked_up_to = usize::from(level) + 1;
-            debug_assert!(new_checked_up_to > checked_up_to);
-            let new_differences = histogram.0[checked_up_to..new_checked_up_to]
-                .iter()
-                .sum::<usize>();
-            if new_differences > count {
-                // TODO: Instead of failing immediately, buffer this and allow a later-checked
-                // higher-difference entry to also permit lower differences.
-                return false;
+        self.remove_allowed_differences_from(histogram) == Histogram::ZERO
+    }
+
+    /// Modify the given [`Histogram`] so that it does not include any of the differences which
+    /// this [`Threshold`] permits. The return value is the remaining, disallowed differences.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use rendiff::{Histogram, Threshold};
+    ///
+    /// let histogram = Histogram({
+    ///     let mut table = [0; 256];
+    ///     table[1] = 1000;
+    ///     table[2] = 100;
+    ///     table[4] = 10;
+    ///     table
+    /// });
+    ///
+    /// // The histogram is allowed by this threshold, so `remove_allowed_differences_from`
+    /// // returns zero.
+    /// assert_eq!(
+    ///     Threshold::no_bigger_than(5).remove_allowed_differences_from(histogram),
+    ///     Histogram::ZERO,
+    /// );
+    ///
+    /// // This threshold is too small in both magnitude and count, so there is a remainder
+    /// // in bin 1 and bin 4 is passed through fully.
+    /// assert_eq!(
+    ///     Threshold::new([(3, 1050)]).remove_allowed_differences_from(histogram),
+    ///     Histogram({
+    ///         let mut table = [0; 256];
+    ///         table[1] = 50; // residual small difference
+    ///         table[4] = 10; // above threshold
+    ///         table
+    ///     }),
+    /// );
+    /// ```
+    #[must_use]
+    pub fn remove_allowed_differences_from(&self, mut histogram: Histogram) -> Histogram {
+        // Always accept any number of zero-value differences.
+        histogram.0[0] = 0;
+
+        // Loop over the thresholds, in ascending order so that we prefer spending low-magnitude
+        // allowance on low-magnitude differences instead of spending high-magnitude allowance on
+        // low-magnitude differences.
+        for (&allowed_magnitude, &(mut allowed_count)) in &self.0 {
+            // Slice the portion of the histogram that is affected.
+            let affected_region_of_histogram = &mut histogram.0[1..=usize::from(allowed_magnitude)];
+
+            // Subtract all allowed differences from both the histogram and the threshold.
+            // This is done in descending order of magnitude, so that the final result will favor
+            // reporting excess small differences not covered by a high-magnitude allowance over
+            // reporting excess large differences that look like they should have been covered.
+            for h_count in affected_region_of_histogram.iter_mut().rev() {
+                let deduction: usize = (*h_count).min(allowed_count);
+                *h_count -= deduction;
+                allowed_count -= deduction;
             }
-            checked_up_to = new_checked_up_to;
         }
 
-        // Finally, reject differences greater than any accepted.
-        let remaining_differences = histogram.0[checked_up_to..].iter().sum::<usize>();
-        if remaining_differences > 0 {
-            return false;
-        }
-
-        true
+        histogram
     }
 }
 

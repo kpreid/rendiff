@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+* `Threshold::remove_allowed_differences_from()`, which can be used in place of `Threshold::allows()` to give more information about comparison failures than just the boolean.
+
+### Changed
+
+* A `Threshold`’s allowance of large magnitude differences now also applies to small magnitude differences which were not covered by entries for smaller magnitudes.
+
 ### Removed
 
 * Rust versions prior to 1.90.0 are no longer supported.
