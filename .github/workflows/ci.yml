@@ -96,6 +96,12 @@ jobs:
         cargo clippy --all-features
         cargo doc --all-features
 
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: cargo fmt --check
+
   semver:
     runs-on: ubuntu-latest
 

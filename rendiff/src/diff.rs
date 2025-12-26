@@ -175,8 +175,8 @@ fn vec_for_same_size_image<T>(image: ImgRef<'_, impl Sized>) -> Vec<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::luma_to_rgba;
     use crate::Threshold;
+    use crate::image::luma_to_rgba;
     use imgref::{Img, ImgExt as _};
 
     /// Run [`diff()`] against two images defined as vectors,
