@@ -16,6 +16,6 @@ rendiff = { version = "0.2.0", path = "rendiff/" }
 
 interop = { path = "interop/" }
 embed-doc-image = { version = "0.1.4" }
-image = { version = "0.24.6", default-features = false }
+image = { version = "0.25.9", default-features = false }
 imgref = { version = "1.10.1", default-features = false }
 mutants = "0.0.3"
