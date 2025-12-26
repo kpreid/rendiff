@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: [stable, beta, nightly, "1.75.0"]
+        toolchain: [stable, beta, nightly, "1.90.0"]
 
     runs-on: ubuntu-latest
     continue-on-error: false

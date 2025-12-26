@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Removed
+
+* Rust versions prior to 1.90.0 are no longer supported.
+
 ## 0.2.1 (2024-06-10)
 
 This release only affects documentation.
