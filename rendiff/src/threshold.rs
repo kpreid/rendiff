@@ -110,7 +110,7 @@ mod tests {
 
     const H1: Histogram = {
         let mut h = [0; 256];
-        h[0] = 1000;
+        h[0] = 1000; // never matters
         h[1] = 30;
         h[10] = 5;
         h[50] = 1;
@@ -138,6 +138,17 @@ mod tests {
     fn almost_exact_fit() {
         // fails because not allowing two in the 50-100 range
         assert!(!Threshold::new([(1, 30), (10, 5), (100, 1)]).allows(H1));
+    }
+
+    #[test]
+    fn higher_value_threshold_can_apply_to_lower_error() {
+        assert!(
+            Threshold::new([
+                (1, 10),    // fewer 1s than H1 contains
+                (100, 100)  // should allow everything
+            ])
+            .allows(H1)
+        );
     }
 
     #[test]
