@@ -160,6 +160,21 @@ mod tests {
     fn simple_threshold() {
         assert_eq!(
             (
+                Threshold::no_bigger_than(99).remove_allowed_differences_from(H1),
+                Threshold::no_bigger_than(100).remove_allowed_differences_from(H1)
+            ),
+            (
+                {
+                    let mut h = [0; 256];
+                    h[100] = 1;
+                    Histogram(h)
+                },
+                Histogram::ZERO
+            )
+        );
+        // check that allows() agrees with remove_allowed_differences_from()
+        assert_eq!(
+            (
                 Threshold::no_bigger_than(99).allows(H1),
                 Threshold::no_bigger_than(100).allows(H1)
             ),
@@ -169,23 +184,35 @@ mod tests {
 
     #[test]
     fn exact_fit() {
-        assert!(Threshold::new([(1, 30), (10, 5), (50, 1), (100, 1)]).allows(H1));
+        assert_eq!(
+            Threshold::new([(1, 30), (10, 5), (50, 1), (100, 1)])
+                .remove_allowed_differences_from(H1),
+            Histogram::ZERO
+        );
     }
 
     #[test]
     fn almost_exact_fit() {
         // fails because not allowing two in the 50-100 range
-        assert!(!Threshold::new([(1, 30), (10, 5), (100, 1)]).allows(H1));
+        assert_eq!(
+            Threshold::new([(1, 30), (10, 5), (100, 1)]).remove_allowed_differences_from(H1),
+            {
+                let mut h = [0; 256];
+                h[50] = 1;
+                Histogram(h)
+            }
+        );
     }
 
     #[test]
     fn higher_value_threshold_can_apply_to_lower_error() {
-        assert!(
+        assert_eq!(
             Threshold::new([
                 (1, 10),    // fewer 1s than H1 contains
                 (100, 100)  // should allow everything
             ])
-            .allows(H1)
+            .remove_allowed_differences_from(H1),
+            Histogram::ZERO,
         );
     }
 
@@ -193,24 +220,43 @@ mod tests {
     fn total_count() {
         assert_eq!(
             (
-                Threshold::new([(100, 36)]).allows(H1),
-                Threshold::new([(100, 37)]).allows(H1)
+                Threshold::new([(100, 36)]).remove_allowed_differences_from(H1),
+                Threshold::new([(100, 37)]).remove_allowed_differences_from(H1)
             ),
-            (false, true)
+            (
+                {
+                    // It would be, in a sense, equally accurate to report `h[100] = 1`,
+                    // but that would be less informative about the level of the problem.
+                    let mut h = [0; 256];
+                    h[1] = 1;
+                    Histogram(h)
+                },
+                Histogram::ZERO
+            )
         );
     }
 
     #[test]
     fn max_threshold_allows_max_diff() {
-        assert!(Threshold::new([(255, 10)]).allows({
-            let mut h = [0; 256];
-            h[255] = 10;
-            Histogram(h)
-        }));
-        assert!(!Threshold::new([(255, 10)]).allows({
-            let mut h = [0; 256];
-            h[255] = 11;
-            Histogram(h)
-        }));
+        assert_eq!(
+            Threshold::new([(255, 10)]).remove_allowed_differences_from({
+                let mut h = [0; 256];
+                h[255] = 10;
+                Histogram(h)
+            }),
+            Histogram::ZERO,
+        );
+        assert_eq!(
+            Threshold::new([(255, 10)]).remove_allowed_differences_from({
+                let mut h = [0; 256];
+                h[255] = 11;
+                Histogram(h)
+            }),
+            {
+                let mut h = [0; 256];
+                h[255] = 1; // 11 in histogram - 10 in threshold = 1 remaining
+                Histogram(h)
+            },
+        );
     }
 }
