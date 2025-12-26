@@ -1,6 +1,6 @@
 [package]
 name = "rendiff-cli"
-edition = "2021"
+edition = "2024"
 rust-version = { workspace = true }
 repository = { workspace = true }
 categories = ["command-line-utilities", "development-tools::testing"]

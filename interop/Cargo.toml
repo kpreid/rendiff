@@ -1,6 +1,6 @@
 [package]
 name = "interop"
-edition = "2021"
+edition = "2024"
 rust-version.workspace = true
 repository.workspace = true
 description = "Conversion between `image` and `imgref` data types."
